@@ -22,3 +22,5 @@ Pages worth starting with are:
 * Send all bug reports to [mailing
 list](https://lists.openvz.org/mailman/listinfo/criu);
 * Spread the word about CRIU in [social networks](http://criu.org/Contacts);
+
+### This fork is part of my research into lazy file migration techniques.
