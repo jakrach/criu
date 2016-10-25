@@ -1525,6 +1525,9 @@ int do_open_reg_noseek_flags(int ns_root_fd, struct reg_file_info *rfi, void *ar
 	int fd;
 
 	fd = openat(ns_root_fd, rfi->path, flags);
+
+	pr_perror("Can't open file %s on restore", rfi->path);
+
 	if (fd < 0) {
 		pr_perror("Can't open file %s on restore", rfi->path);
 		return fd;
