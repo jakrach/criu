@@ -1132,6 +1132,7 @@ int dump_one_reg_file(int lfd, u32 id, const struct fd_parms *p)
 	pr_info("Dumping path for %d fd via self %d [%s]\n",
 			p->fd, lfd, &link->name[1]);
 
+
 	/*
 	 * The regular path we can handle should start with slash.
 	 */
@@ -1150,6 +1151,17 @@ ext:
 	rfe.fown	= (FownEntry *)&p->fown;
 	rfe.has_mode	= true;
 	rfe.mode	= p->stat.st_mode;
+
+    // TODO(jakrach): Currently, fd > 0 is my only metric
+    // to distinguish a file to be lazily copied from
+    // something to ignore (i.e. don't support stdin).
+    if (p->fd > 0) {
+        pr_info("Saving as IOU: /criu/%s\n", rfe.name);
+        char tmp[PATH_MAX];
+        strcpy(tmp, rfe.name);
+        strcpy(rfe.name, "/criu/");
+        strcpy(rfe.name+6, tmp);
+    }
 
 	if (S_ISREG(p->stat.st_mode) && should_check_size(rfe.flags)) {
 		rfe.has_size = true;
@@ -1525,6 +1537,7 @@ int do_open_reg_noseek_flags(int ns_root_fd, struct reg_file_info *rfi, void *ar
 	int fd;
 
 	fd = openat(ns_root_fd, rfi->path, flags);
+
 	if (fd < 0) {
 		pr_perror("Can't open file %s on restore", rfi->path);
 		return fd;
