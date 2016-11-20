@@ -1542,38 +1542,19 @@ static int do_open_reg(int ns_root_fd, struct reg_file_info *rfi, void *arg)
 {
 	int fd;
 
-    if (faccessat(ns_root_fd, rfi->path, F_OK, 0) != -1) {
-        pr_warn("No worries, %s exists!\n", rfi->path);
-    } else {
-        pr_warn("Uh-oh, %s does not exist!\n", rfi->path);
-        /*
-        int rv = seteuid(1000);
-        if (rv) {
-            pr_perror("Failed to seteuid(1000)\n");
-            exit(rv);
+    // File not local, point to CRIU
+    if (faccessat(ns_root_fd, rfi->path, F_OK, 0) == -1) {
+        pr_info("%s does not exist, hooking up with Lazyfs\n", rfi->path);
+        int i;
+        char new_path[PATH_MAX];
+        for(i = 0; i < strlen(rfi->path); i++) {
+            if (rfi->path[i] == '/') {
+                rfi->path[i] = '.';
+            }
         }
-        */
-        pr_warn("euid: %d uid: %d\n", geteuid(), getuid());
-        DIR *sshfs = opendir("/home/jeremy/tetrane");
-        if (!sshfs) {
-            pr_perror("Could not open /home/jeremy/tetrane");
-            exit(-1);
-        }
-        int dfd = dirfd(sshfs);
-        if (faccessat(dfd, "home/user/tetrane_saas_umd.sh", F_OK, 0) != -1) {
-            pr_warn("We have access to sshfs!");
-            // TODO Copy it over.
-            // TODO Remap rfi structure to point to new thing
-        } else {
-            pr_perror("Can't open file %s on restore", rfi->path);
-        }
-        /*
-        rv = seteuid(0);
-        if (rv) {
-            pr_perror("Failed to seteuid(0)\n");
-            exit(rv);
-        }
-        */
+        sprintf(new_path, "/lazyfs/%s", rfi->path);
+        strcpy(rfi->path, new_path);
+        pr_info("Lazyfs path is %s\n", rfi->path);
     }
 
 	fd = do_open_reg_noseek(ns_root_fd, rfi, arg);
